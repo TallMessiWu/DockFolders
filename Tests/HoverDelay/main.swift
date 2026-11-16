@@ -39,4 +39,28 @@ precondition(!timer.shouldClose(protected: false, delay: 0.3, now: start.addingT
 precondition(timer.shouldClose(protected: false, delay: 0.3, now: start.addingTimeInterval(0.8)))
 precondition(!timer.shouldClose(protected: true, delay: 0, now: start.addingTimeInterval(1)))
 precondition(timer.shouldClose(protected: false, delay: 0, now: start.addingTimeInterval(1)))
-print("PASS: open/close delay defaults, zero, precision, bounds, invalid values; leave timeout and re-entry cancellation")
+
+// Regression: a fast pass triggers hover opening, then leaves before the very first frame.
+// No pointerInside sample will ever arrive; the folder must still time out and close.
+var fastPass = FolderLeaveTimer(pointerInitiated: true)
+precondition(!fastPass.shouldClose(protected: false, delay: 0.3, now: start))
+precondition(fastPass.shouldClose(protected: false, delay: 0.3, now: start.addingTimeInterval(0.31)))
+var immediatePass = FolderLeaveTimer(pointerInitiated: true)
+precondition(immediatePass.shouldClose(protected: false, delay: 0, now: start))
+
+// An opening requested without the mouse should stay until the pointer visits it.
+var keyboard = FolderLeaveTimer(pointerInitiated: false)
+precondition(!keyboard.shouldClose(protected: false, delay: 0.3, now: start))
+precondition(!keyboard.shouldClose(protected: false, delay: 0.3, now: start.addingTimeInterval(10)))
+precondition(!keyboard.shouldClose(pointerInside: true, protected: false, delay: 0.3, now: start.addingTimeInterval(11)))
+precondition(!keyboard.shouldClose(protected: false, delay: 0.3, now: start.addingTimeInterval(12)))
+precondition(keyboard.shouldClose(protected: false, delay: 0.3, now: start.addingTimeInterval(12.31)))
+
+// Returning to the folder resets the timeout even after a missed initial pointer sample.
+var returnVisit = FolderLeaveTimer(pointerInitiated: true)
+precondition(!returnVisit.shouldClose(protected: false, delay: 0.3, now: start))
+precondition(!returnVisit.shouldClose(pointerInside: true, protected: false, delay: 0.3, now: start.addingTimeInterval(0.2)))
+precondition(!returnVisit.shouldClose(protected: false, delay: 0.3, now: start.addingTimeInterval(0.4)))
+precondition(!returnVisit.shouldClose(protected: false, delay: 0.3, now: start.addingTimeInterval(0.6)))
+precondition(returnVisit.shouldClose(protected: false, delay: 0.3, now: start.addingTimeInterval(0.71)))
+print("PASS: delay preferences, leave timeout, fast hover/click pass, zero delay, keyboard opening and re-entry cancellation")
