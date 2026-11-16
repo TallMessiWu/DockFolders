@@ -60,13 +60,11 @@ final class FolderPanelController: NSObject {
 
     /// Resting width of one Dock tile (icon + spacing), measured when the popup opens.
     private var dockPitch: CGFloat?
-    /// When the pointer left the popup and the folder tile (nil while it's on one of them).
-    private var awaySince: Date?
+    /// Tracks time outside the popup, folder tile and protected interaction areas.
+    private var leaveTimer = FolderLeaveTimer()
     /// Whether the pointer has been on the popup or the folder tile since it opened. Until then
     /// (e.g. opened without the mouse), it stays open until dismissed.
     private var pointerEngaged = false
-    /// Whether the pointer was in the popup on the last frame (to tell which edge it left by).
-    private var wasInPopup = false
     /// Until this time, losing the Dock's focus (e.g. hiding the frontmost app activated another
     /// one) re-holds the Dock instead of closing the popup.
     private var keepOpenUntil = Date.distantPast
@@ -82,8 +80,7 @@ final class FolderPanelController: NSObject {
 
     /// Sprung open by an app dragged from the Dock: stays open until that drag ends.
     var heldForDrop = false
-    /// Opened by resting the pointer on its tile (Settings → Open folders on hover): it closes
-    /// sooner once the pointer moves on, like the Dock's own hover.
+    /// Opened by resting the pointer on its tile (Settings → Open folders on hover).
     var openedByHover = false
     /// After an app was dropped in: stays open (and holds the Dock) a moment so you see it land.
     private var showLandedUntil = Date.distantPast
@@ -138,9 +135,8 @@ final class FolderPanelController: NSObject {
         model.dropTargeted = false
         outsideDrag = nil
         landing = false
-        awaySince = nil
+        leaveTimer = FolderLeaveTimer()
         pointerEngaged = false
-        wasInPopup = false
         openedByHover = false
 
         tileItem = item
@@ -319,31 +315,13 @@ final class FolderPanelController: NSObject {
             }
         }
 
-        // Leaving through the sides or the top is like moving off the Dock: the folder goes at once.
-        // (Through the bottom, back toward the Dock, it lingers as before.)
-        if wasInPopup, !inPopup, !inMenu, !menus, !dragging, !inGracePeriod, !towardDock(mouse) {
-            wasInPopup = false
-            close()
-            return
-        }
-        wasInPopup = inPopup
-
-        // Off the Dock and not headed into the popup, with nothing holding the Dock: it's sliding
-        // away right now, so close with it instead of lingering above an empty screen edge.
-        if pointerEngaged, CoreDock.autoHideEnabled, !holdingDock, !overDock, !inPopup, !approach, !inMenu, !menus,
-           !dragging, !inGracePeriod {
-            close()
-            return
-        }
-
-        // Close once the pointer has been somewhere else for a moment.
+        // One configurable timeout for every direction of departure and both opening methods.
+        // Preserve the safe path between tile and popup, menus, drags and focus-change grace.
         if inPopup || onTile { pointerEngaged = true }
-        if inPopup || onTile || approach || inMenu || menus || dragging || !pointerEngaged {
-            awaySince = nil
-        } else if let since = awaySince {
-            if Date().timeIntervalSince(since) > (openedByHover ? 0.3 : 0.8), !inGracePeriod { close(); return }
-        } else {
-            awaySince = Date()
+        if leaveTimer.shouldClose(protected: inPopup || onTile || approach || inMenu || menus || dragging
+                                  || !pointerEngaged || inGracePeriod, delay: FolderPrefs.closeDelay) {
+            close()
+            return
         }
 
         // Esc (or anything else) took the Dock's focus while we were holding it.
@@ -391,15 +369,6 @@ final class FolderPanelController: NSObject {
 
     /// Just under the Dock's window (which holds its icons and name labels).
     private static let belowDockLabels = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.dockWindow)) - 1)
-
-    /// Whether a point just outside the popup is on its Dock side.
-    private func towardDock(_ point: CGPoint) -> Bool {
-        switch CoreDock.orientation {
-        case .bottom: return point.y < popupFrame.minY
-        case .left: return point.x < popupFrame.minX
-        case .right: return point.x > popupFrame.maxX
-        }
-    }
 
     private func approachZone() -> CGRect {
         switch CoreDock.orientation {
