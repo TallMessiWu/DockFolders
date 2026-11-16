@@ -29,6 +29,13 @@ final class SettingsModel: ObservableObject {
     }
     @Published var magnifies = FolderPrefs.magnifies { didSet { FolderPrefs.magnifies = magnifies } }
     @Published var opensOnHover = FolderPrefs.opensOnHover { didSet { FolderPrefs.opensOnHover = opensOnHover } }
+    @Published private(set) var hoverDelay = FolderPrefs.hoverDelay
+
+    func setHoverDelay(_ value: Double) {
+        hoverDelay = FolderPrefs.clampedHoverDelay(value)
+        FolderPrefs.hoverDelay = hoverDelay
+    }
+
     @Published var magnification = Double(FolderPrefs.magnification) {
         didSet { FolderPrefs.magnification = CGFloat(magnification) }
     }
@@ -488,6 +495,10 @@ private struct AppRow: View {
 private struct GeneralView: View {
     @ObservedObject var model: SettingsModel
 
+    private var hoverDelay: Binding<Double> {
+        Binding(get: { model.hoverDelay }, set: { model.setHoverDelay($0) })
+    }
+
     var body: some View {
         Form {
             if model.dockChangesWaiting {
@@ -506,6 +517,24 @@ private struct GeneralView: View {
                     Text("Open folders on hover")
                     Text("A folder opens when the pointer rests on it in the Dock, without a click.")
                 }
+                LabeledContent {
+                    HStack(spacing: 10) {
+                        Slider(value: hoverDelay, in: FolderPrefs.hoverDelayRange, step: 0.05)
+                            .accessibilityLabel("Hover delay")
+                        TextField("Seconds", value: hoverDelay,
+                                  format: .number.precision(.fractionLength(0...2)))
+                            .textFieldStyle(.roundedBorder)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 65)
+                            .accessibilityLabel("Hover delay in seconds")
+                        Text("s")
+                            .foregroundStyle(.secondary)
+                    }
+                } label: {
+                    Text("Hover delay")
+                    Text("Wait 0–2 seconds before opening. Set to 0 for no delay.")
+                }
+                .disabled(!model.opensOnHover)
                 LabeledContent("Accessibility") {
                     if model.accessibilityAllowed {
                         Label("Allowed", systemImage: "checkmark.circle.fill")

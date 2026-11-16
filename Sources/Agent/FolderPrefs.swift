@@ -16,6 +16,23 @@ enum FolderPrefs {
         set { defaults.set(newValue, forKey: "openOnHover"); FolderHover.shared.update() }
     }
 
+    static let hoverDelayRange: ClosedRange<Double> = 0...2
+    static let defaultHoverDelay: TimeInterval = 0.3
+
+    static func clampedHoverDelay(_ value: TimeInterval) -> TimeInterval {
+        guard value.isFinite else { return defaultHoverDelay }
+        return min(max(value, hoverDelayRange.lowerBound), hoverDelayRange.upperBound)
+    }
+
+    /// Seconds before a hovered folder opens. Zero removes the intentional wait.
+    static var hoverDelay: TimeInterval {
+        get {
+            guard let value = defaults.object(forKey: "hoverDelay") as? NSNumber else { return defaultHoverDelay }
+            return clampedHoverDelay(value.doubleValue)
+        }
+        set { defaults.set(clampedHoverDelay(newValue), forKey: "hoverDelay") }
+    }
+
     /// How many apps fit on one page of a folder: 3, 6, 9 or 16.
     static let pageSizes = [3, 6, 9, 16]
     static var appsPerPage: Int {
