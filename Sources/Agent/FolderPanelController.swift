@@ -129,6 +129,7 @@ final class FolderPanelController: NSObject {
         model.pointer = nil
         model.magnificationAmount = 0
         model.hovering = false
+        model.hoverPoint = nil
         model.dragging = nil
         model.dragLifted = false
         model.dragOutside = false
@@ -348,13 +349,16 @@ final class FolderPanelController: NSObject {
         if abs(amount - (inside ? 1 : 0)) < 0.01 { amount = inside ? 1 : 0 }
         if amount == 0 { pointer = nil }
 
-        guard pointer != model.pointer || amount != model.magnificationAmount || inside != model.hovering else { return }
+        let hoverPoint = inside ? actual : nil
+        guard pointer != model.pointer || amount != model.magnificationAmount || inside != model.hovering
+                || hoverPoint != model.hoverPoint else { return }
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) {
             model.pointer = pointer
             model.magnificationAmount = amount
             model.hovering = inside
+            model.hoverPoint = hoverPoint
         }
     }
 
@@ -789,6 +793,10 @@ final class FolderPanelController: NSObject {
         let content = m.contentSize(arrowOnSide: CoreDock.orientation != .bottom)
         let frame = CGRect(x: glass.minX - FolderMetrics.marginH, y: glass.minY - FolderMetrics.marginBottom,
                            width: content.width, height: content.height)
+        let visible = frame.intersection(bounds)
+        let visibleContent = CGRect(x: visible.minX - frame.minX, y: frame.maxY - visible.maxY,
+                                    width: visible.width, height: visible.height)
+        if model.visibleContentBounds != visibleContent { model.visibleContentBounds = visibleContent }
         if frame != panel.frame { panel.setFrame(frame, display: true) }
         guard isOpen else { return }
         EventInterceptor.shared.setPanelFrame(CGRect(x: glass.minX, y: primaryHeight - glass.maxY,
