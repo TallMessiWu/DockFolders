@@ -14,9 +14,11 @@ defer { defaults.setVolatileDomain(previousArguments, forName: UserDefaults.argu
 
 func checkStored(_ value: Any, expected: Double) {
     // An in-memory domain avoids changing the user's preferences during tests.
-    defaults.setVolatileDomain(["hoverDelay": value], forName: UserDefaults.argumentDomain)
-    let actual = FolderPrefs.hoverDelay
-    precondition(abs(actual - expected) < 0.000001, "Stored \(value): expected \(expected), got \(actual)")
+    for key in ["hoverDelay", "closeDelay"] {
+        defaults.setVolatileDomain([key: value], forName: UserDefaults.argumentDomain)
+        let actual = key == "hoverDelay" ? FolderPrefs.hoverDelay : FolderPrefs.closeDelay
+        precondition(abs(actual - expected) < 0.000001, "\(key) stored \(value): expected \(expected), got \(actual)")
+    }
 }
 
 checkStored("invalid", expected: 0.3)
@@ -27,4 +29,14 @@ checkStored(-1.0, expected: 0)
 checkStored(20.0, expected: 2)
 checkStored(Double.nan, expected: 0.3)
 checkStored(Double.infinity, expected: 0.3)
-print("PASS: hover delay default, zero, typed precision, bounds and invalid stored values")
+var timer = FolderLeaveTimer()
+let start = Date(timeIntervalSinceReferenceDate: 0)
+precondition(!timer.shouldClose(protected: false, delay: 0.3, now: start))
+precondition(!timer.shouldClose(protected: false, delay: 0.3, now: start.addingTimeInterval(0.2)))
+precondition(!timer.shouldClose(protected: true, delay: 0.3, now: start.addingTimeInterval(0.25)))
+precondition(!timer.shouldClose(protected: false, delay: 0.3, now: start.addingTimeInterval(0.4)))
+precondition(!timer.shouldClose(protected: false, delay: 0.3, now: start.addingTimeInterval(0.6)))
+precondition(timer.shouldClose(protected: false, delay: 0.3, now: start.addingTimeInterval(0.8)))
+precondition(!timer.shouldClose(protected: true, delay: 0, now: start.addingTimeInterval(1)))
+precondition(timer.shouldClose(protected: false, delay: 0, now: start.addingTimeInterval(1)))
+print("PASS: open/close delay defaults, zero, precision, bounds, invalid values; leave timeout and re-entry cancellation")

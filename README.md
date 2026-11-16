@@ -62,7 +62,7 @@ starts at login.
   Windows, Hide, Quit, Force Quit). Folders get Edit Name, Add Apps, Empty Folder and Settings.
 - **Live Dock changes.** Folders join and leave the Dock without restarting it (no wallpaper or menu
   bar flash).
-- **Optional: open on hover.** Folders can open when the pointer rests on them. In Settings → General, adjust the delay from 0 to 2 seconds with a slider or by typing a value (default: 0.3 seconds).
+- **Optional: open on hover.** Folders can open when the pointer rests on them. In Settings → General, adjust the open and close delays independently from 0 to 2 seconds with continuous sliders or numeric input (default: 0.3 seconds each). The close delay also applies to folders opened by clicking; returning to the folder or its Dock tile cancels the pending close.
 - **Optional: open apps only in their folders.** For Macs with System Integrity Protection partly
   off ([details below](#optional-open-apps-only-in-their-folders)).
 - **Native and accessible.** Light, Dark and tinted appearances; Reduce Transparency makes it

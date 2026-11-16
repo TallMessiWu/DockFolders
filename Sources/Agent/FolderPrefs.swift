@@ -33,6 +33,15 @@ enum FolderPrefs {
         set { defaults.set(clampedHoverDelay(newValue), forKey: "hoverDelay") }
     }
 
+    /// Seconds after leaving a folder before closing it, whether opened by hover or click.
+    static var closeDelay: TimeInterval {
+        get {
+            guard let value = defaults.object(forKey: "closeDelay") as? NSNumber else { return defaultHoverDelay }
+            return clampedHoverDelay(value.doubleValue)
+        }
+        set { defaults.set(clampedHoverDelay(newValue), forKey: "closeDelay") }
+    }
+
     /// How many apps fit on one page of a folder: 3, 6, 9 or 16.
     static let pageSizes = [3, 6, 9, 16]
     static var appsPerPage: Int {

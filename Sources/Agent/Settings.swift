@@ -30,10 +30,16 @@ final class SettingsModel: ObservableObject {
     @Published var magnifies = FolderPrefs.magnifies { didSet { FolderPrefs.magnifies = magnifies } }
     @Published var opensOnHover = FolderPrefs.opensOnHover { didSet { FolderPrefs.opensOnHover = opensOnHover } }
     @Published private(set) var hoverDelay = FolderPrefs.hoverDelay
+    @Published private(set) var closeDelay = FolderPrefs.closeDelay
 
     func setHoverDelay(_ value: Double) {
         hoverDelay = FolderPrefs.clampedHoverDelay(value)
         FolderPrefs.hoverDelay = hoverDelay
+    }
+
+    func setCloseDelay(_ value: Double) {
+        closeDelay = FolderPrefs.clampedHoverDelay(value)
+        FolderPrefs.closeDelay = closeDelay
     }
 
     @Published var magnification = Double(FolderPrefs.magnification) {
@@ -517,24 +523,13 @@ private struct GeneralView: View {
                     Text("Open folders on hover")
                     Text("A folder opens when the pointer rests on it in the Dock, without a click.")
                 }
-                LabeledContent {
-                    HStack(spacing: 10) {
-                        Slider(value: hoverDelay, in: FolderPrefs.hoverDelayRange, step: 0.05)
-                            .accessibilityLabel("Hover delay")
-                        TextField("Seconds", value: hoverDelay,
-                                  format: .number.precision(.fractionLength(0...2)))
-                            .textFieldStyle(.roundedBorder)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 65)
-                            .accessibilityLabel("Hover delay in seconds")
-                        Text("s")
-                            .foregroundStyle(.secondary)
-                    }
-                } label: {
-                    Text("Hover delay")
-                    Text("Wait 0–2 seconds before opening. Set to 0 for no delay.")
-                }
-                .disabled(!model.opensOnHover)
+                DelaySettingRow(title: "Open delay",
+                                explanation: "Wait 0–2 seconds before opening on hover. Set to 0 for no delay.",
+                                value: hoverDelay)
+                    .disabled(!model.opensOnHover)
+                DelaySettingRow(title: "Close delay",
+                                explanation: "Wait 0–2 seconds after the pointer leaves. Set to 0 for no delay.",
+                                value: Binding(get: { model.closeDelay }, set: { model.setCloseDelay($0) }))
                 LabeledContent("Accessibility") {
                     if model.accessibilityAllowed {
                         Label("Allowed", systemImage: "checkmark.circle.fill")
