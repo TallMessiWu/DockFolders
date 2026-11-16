@@ -64,6 +64,7 @@ starts at login.
   bar flash).
 - **Optional: open on hover.** Folders can open when the pointer rests on them. In Settings → General, adjust the open and close delays independently from 0 to 2 seconds with continuous sliders or numeric input (default: 0.3 seconds each). The close delay also applies to folders opened by clicking; returning to the folder or its Dock tile cancels the pending close.
 - **App names on hover.** Point at an app inside a folder to show its name in a Dock-style glass callout above the icon, including while icons are magnified. Long names truncate to fit the visible screen area.
+- **English and simplified Chinese.** Choose a language before first-run permission setup, or switch instantly in Settings → General → Language. Chinese menu actions follow macOS terminology.
 - **Optional: open apps only in their folders.** For Macs with System Integrity Protection partly
   off ([details below](#optional-open-apps-only-in-their-folders)).
 - **Native and accessible.** Light, Dark and tinted appearances; Reduce Transparency makes it
