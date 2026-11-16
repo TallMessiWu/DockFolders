@@ -62,9 +62,6 @@ final class FolderPanelController: NSObject {
     private var dockPitch: CGFloat?
     /// Tracks time outside the popup, folder tile and protected interaction areas.
     private var leaveTimer = FolderLeaveTimer()
-    /// Whether the pointer has been on the popup or the folder tile since it opened. Until then
-    /// (e.g. opened without the mouse), it stays open until dismissed.
-    private var pointerEngaged = false
     /// Until this time, losing the Dock's focus (e.g. hiding the frontmost app activated another
     /// one) re-holds the Dock instead of closing the popup.
     private var keepOpenUntil = Date.distantPast
@@ -106,10 +103,10 @@ final class FolderPanelController: NSObject {
             if FolderPrefs.opensOnHover { openedByHover = false } else { close() }
             return
         }
-        show(folderID: folderID, item: item)
+        show(folderID: folderID, item: item, pointerInitiated: true)
     }
 
-    func show(folderID: String, item: DockItem?) {
+    func show(folderID: String, item: DockItem?, pointerInitiated: Bool = false) {
         guard let folder = FolderStore.shared.folder(id: folderID),
               let item = item ?? DockAX.shared.item(for: FolderActions.dockURL(for: folder)) else { return }
         if isOpen { close(animated: false) }
@@ -136,8 +133,7 @@ final class FolderPanelController: NSObject {
         model.dropTargeted = false
         outsideDrag = nil
         landing = false
-        leaveTimer = FolderLeaveTimer()
-        pointerEngaged = false
+        leaveTimer = FolderLeaveTimer(pointerInitiated: pointerInitiated)
         openedByHover = false
 
         tileItem = item
@@ -318,9 +314,9 @@ final class FolderPanelController: NSObject {
 
         // One configurable timeout for every direction of departure and both opening methods.
         // Preserve the safe path between tile and popup, menus, drags and focus-change grace.
-        if inPopup || onTile { pointerEngaged = true }
-        if leaveTimer.shouldClose(protected: inPopup || onTile || approach || inMenu || menus || dragging
-                                  || !pointerEngaged || inGracePeriod, delay: FolderPrefs.closeDelay) {
+        if leaveTimer.shouldClose(pointerInside: inPopup || onTile,
+                                  protected: approach || inMenu || menus || dragging || inGracePeriod,
+                                  delay: FolderPrefs.closeDelay) {
             close()
             return
         }

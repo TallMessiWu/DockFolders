@@ -76,7 +76,7 @@ final class FolderHover {
               Date().timeIntervalSince(current.since) >= FolderPrefs.hoverDelay else { return }
         hovered?.opened = true
         guard panel.folderID != folderID else { return }
-        panel.show(folderID: folderID, item: item)
+        panel.show(folderID: folderID, item: item, pointerInitiated: true)
         panel.openedByHover = true
     }
 
