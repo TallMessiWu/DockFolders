@@ -22,8 +22,8 @@ struct DelaySettingRow: View {
                     .textFieldStyle(.roundedBorder)
                     .multilineTextAlignment(.trailing)
                     .frame(width: 72)
-                    .accessibilityLabel("\(title) in seconds")
-                Text("s")
+                    .accessibilityLabel(L10n.format("%@ in seconds", title))
+                Text(L10n.text("s"))
                     .foregroundStyle(.secondary)
                     .fixedSize()
             }
